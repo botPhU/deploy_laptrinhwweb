@@ -207,8 +207,7 @@ function renderOrders() {
             <td class="p-4 text-center">${statusBadge}</td>
             <td class="p-4 text-right font-bold text-[#0056D2] dark:text-blue-400">${Number(order.price).toLocaleString('vi-VN')} đ</td>
             <td class="p-4 text-center space-x-1">
-              ${step === 1 ? `<button onclick="approveOrder(${order.id}, this)" class="px-3 py-1.5 text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">Duyệt đơn</button>` : ''}
-              ${step === 1 ? `<button onclick="cancelOrder(${order.id}, this)" class="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors">Hủy đơn</button>` : ''}
+              ${step === 1 ? `<span class="action-buttons-wrapper space-x-1"><button onclick="approveOrder(${order.id}, this)" class="px-3 py-1.5 text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">Duyệt đơn</button><button onclick="cancelOrder(${order.id}, this)" class="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors">Hủy đơn</button></span>` : ''}
               <button onclick="downloadInvoice(${order.id})" class="px-3 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors" title="Biên lai ghi danh"><i class="fa-solid fa-file-pdf"></i></button>
               <button onclick="deleteOrder(${order.id})" class="px-3 py-1.5 text-xs font-bold bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg transition-colors" title="Xóa ghi danh"><i class="fa-solid fa-trash-can"></i></button>
             </td>
@@ -274,14 +273,14 @@ async function approveOrder(orderId, button) {
 
         if (response.ok) {
             // Ẩn lập tức các nút và thay thế bằng text
-            button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1.5 rounded-md border border-red-200"><i class="fa-solid fa-xmark"></i> Đã hủy</span>';
+            button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-green-500 font-bold text-xs bg-green-50 px-2 py-1.5 rounded-md border border-green-200"><i class="fa-solid fa-check"></i> Đã duyệt</span>';
             setTimeout(() => loadOrders(), 1000); 
         } else {
             button.disabled = false;
             button.innerText = 'Duyệt đơn';
         }
     } catch (error) {
-        showToast('Lỗi kết nối khi duyệt đơn hàng.', 'error');
+        showToast('Lỗi duyệt đơn: ' + error.message, 'error');
         button.disabled = false;
         button.innerText = 'Duyệt đơn';
     }
@@ -305,14 +304,14 @@ async function cancelOrder(orderId, button) {
 
         if (response.ok) {
             // Ẩn lập tức các nút và thay thế bằng text
-            button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-green-500 font-bold text-xs bg-green-50 px-2 py-1.5 rounded-md border border-green-200"><i class="fa-solid fa-check"></i> Đã duyệt</span>';
+            button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1.5 rounded-md border border-red-200"><i class="fa-solid fa-xmark"></i> Đã hủy</span>';
             setTimeout(() => loadOrders(), 1000); 
         } else {
             button.disabled = false;
             button.innerText = 'Hủy đơn';
         }
     } catch (error) {
-        showToast('Lỗi kết nối khi hủy đơn hàng.', 'error');
+        showToast('Lỗi hủy đơn: ' + error.message, 'error');
         button.disabled = false;
         button.innerText = 'Hủy đơn';
     }

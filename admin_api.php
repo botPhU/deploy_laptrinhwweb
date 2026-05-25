@@ -101,7 +101,12 @@ if (!is_array($input)) $input = [];
 function jsonResponse($data, $status = 200) {
     if (ob_get_level()) ob_clean();
     http_response_code($status);
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    if ($json === false) {
+        echo '{"message": "Lỗi PHP: Không thể định dạng dữ liệu."}';
+    } else {
+        echo $json;
+    }
     exit();
 }
 
@@ -119,12 +124,25 @@ if ($pathInfo === '/orders' && $method === 'GET') {
 } elseif (preg_match('#^/approve-order/(\d+)$#', $pathInfo, $matches) && $method === 'POST') {
     $order_id = $matches[1];
     $res = $conn->query("UPDATE orders SET current_step = 3 WHERE id = $order_id");
-    if (!$res) jsonResponse(["message" => "Lỗi Database: " . $conn->error], 500);
+    if (!$res) {
+        // Tự động thêm cột current_step nếu DB của bạn chưa có
+        if (strpos($conn->error, 'current_step') !== false) {
+            $conn->query("ALTER TABLE orders ADD COLUMN current_step INT DEFAULT 1");
+            $res = $conn->query("UPDATE orders SET current_step = 3 WHERE id = $order_id");
+        }
+        if (!$res) jsonResponse(["message" => "Lỗi Database: " . mb_convert_encoding($conn->error, 'UTF-8', 'auto')], 500);
+    }
     jsonResponse(["success" => true, "message" => "Đã duyệt thành công đơn hàng #$order_id."]);
 } elseif (preg_match('#^/cancel-order/(\d+)$#', $pathInfo, $matches) && $method === 'POST') {
     $order_id = $matches[1];
     $res = $conn->query("UPDATE orders SET current_step = 4 WHERE id = $order_id");
-    if (!$res) jsonResponse(["message" => "Lỗi Database: " . $conn->error], 500);
+    if (!$res) {
+        if (strpos($conn->error, 'current_step') !== false) {
+            $conn->query("ALTER TABLE orders ADD COLUMN current_step INT DEFAULT 1");
+            $res = $conn->query("UPDATE orders SET current_step = 4 WHERE id = $order_id");
+        }
+        if (!$res) jsonResponse(["message" => "Lỗi Database: " . mb_convert_encoding($conn->error, 'UTF-8', 'auto')], 500);
+    }
     jsonResponse(["success" => true, "message" => "Đã hủy đơn hàng #$order_id."]);
 } elseif (preg_match('#^/orders/(\d+)$#', $pathInfo, $matches) && $method === 'DELETE') {
     $order_id = $matches[1];
