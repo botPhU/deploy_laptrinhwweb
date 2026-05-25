@@ -137,6 +137,17 @@ function renderOrders() {
     document.getElementById('btn-delete-orders') && document.getElementById('btn-delete-orders').classList.add('hidden');
     document.getElementById('btn-delete-orders') && document.getElementById('btn-delete-orders').classList.remove('flex');
 
+    // Thêm nút Dọn rác tự động
+    const btnDeleteOrders = document.getElementById('btn-delete-orders');
+    if (btnDeleteOrders && !document.getElementById('btn-clear-cancelled')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.id = 'btn-clear-cancelled';
+        clearBtn.className = 'px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-sm transition-colors flex items-center gap-2 ml-2';
+        clearBtn.innerHTML = '<i class="fa-solid fa-broom"></i> Dọn đơn hủy';
+        clearBtn.onclick = clearAllCancelledOrders;
+        btnDeleteOrders.parentNode.appendChild(clearBtn);
+    }
+
     const tableBody = document.getElementById('orders-table-body');
     const searchInput = document.getElementById('admin-search-input');
     const statusFilter = document.getElementById('admin-status-filter');
@@ -369,6 +380,23 @@ async function deleteSelectedOrders() {
         
         showToast(`Đã xóa thành công ${successCount}/${ids.length} đơn hàng.`, 'success');
         loadOrders();
+    });
+}
+
+async function clearAllCancelledOrders() {
+    showConfirmModal(`Bạn có chắc chắn muốn dọn dẹp (xóa vĩnh viễn) TẤT CẢ các đơn hàng đã bị hủy? Hành động này giúp nhẹ máy chủ và không thể hoàn tác.`, async () => {
+        const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
+        try {
+            const response = await fetch(`admin_api.php/orders/clear-cancelled`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            showToast(data.message, response.ok ? 'success' : 'error');
+            if (response.ok) loadOrders();
+        } catch (error) {
+            showToast("Lỗi kết nối khi dọn dẹp hệ thống.", "error");
+        }
     });
 }
 

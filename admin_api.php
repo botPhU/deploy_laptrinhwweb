@@ -144,6 +144,10 @@ if ($pathInfo === '/orders' && $method === 'GET') {
         if (!$res) jsonResponse(["message" => "Lỗi Database: " . mb_convert_encoding($conn->error, 'UTF-8', 'auto')], 500);
     }
     jsonResponse(["success" => true, "message" => "Đã hủy đơn hàng #$order_id."]);
+} elseif ($pathInfo === '/orders/clear-cancelled' && $method === 'DELETE') {
+    $res = $conn->query("DELETE FROM orders WHERE current_step = 4");
+    if (!$res) jsonResponse(["message" => "Lỗi Database: " . $conn->error], 500);
+    jsonResponse(["message" => "Đã dọn dẹp toàn bộ đơn hàng bị hủy."]);
 } elseif (preg_match('#^/orders/(\d+)$#', $pathInfo, $matches) && $method === 'DELETE') {
     $order_id = $matches[1];
     $res = $conn->query("DELETE FROM orders WHERE id = $order_id");
