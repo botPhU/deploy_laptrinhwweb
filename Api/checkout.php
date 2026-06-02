@@ -14,8 +14,8 @@ register_shutdown_function(function() {
 });
 
 /** @var mysqli $conn */
-require 'db_connect.php';
-require 'vendor/autoload.php';
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -65,6 +65,12 @@ try {
     if (!$stmt->fetch()) {
         $stmt->close();
         $stmt = $conn->prepare("INSERT INTO orders (user_id, course_name, price, current_step, created_at) VALUES (?, ?, ?, 1, NOW())");
+        if (!$stmt) {
+            $conn->query("ALTER TABLE orders ADD COLUMN current_step INT DEFAULT 1");
+            $conn->query("ALTER TABLE orders ADD COLUMN price INT DEFAULT 0");
+            $conn->query("ALTER TABLE orders ADD COLUMN created_at DATETIME DEFAULT NOW()");
+            $stmt = $conn->prepare("INSERT INTO orders (user_id, course_name, price, current_step, created_at) VALUES (?, ?, ?, 1, NOW())");
+        }
         $stmt->bind_param("isi", $user_id, $course_id, $price);
         $stmt->execute();
         $order_id = $conn->insert_id;

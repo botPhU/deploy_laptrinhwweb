@@ -44,7 +44,7 @@ try {
     // 4. Lấy danh sách đơn hàng (orders) để hiển thị trong Tài khoản
     $orders = [];
     // Dùng @ để bỏ qua lỗi nếu bảng orders chưa tồn tại hoặc sai cấu trúc
-    $order_stmt = @$conn->prepare("SELECT * FROM orders WHERE user_id = ?");
+    $order_stmt = @$conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC");
     if ($order_stmt) {
         $order_stmt->bind_param("i", $user_id);
         $order_stmt->execute();

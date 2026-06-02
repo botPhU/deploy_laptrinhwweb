@@ -207,16 +207,93 @@ const App = {
         }
     },
 
+    loadNotifications() {
+        const stored = localStorage.getItem(`coursera_notifications_${this.state.user?.email}`);
+        if (stored) {
+            this.state.notifications = JSON.parse(stored);
+        } else {
+            this.state.notifications = [];
+        }
+        this.renderNotifications();
+    },
+
+    saveNotifications() {
+        if (this.state.user) {
+            localStorage.setItem(`coursera_notifications_${this.state.user.email}`, JSON.stringify(this.state.notifications));
+        }
+    },
+
+    addNotification(title, message, courseId = null) {
+        this.state.notifications.unshift({
+            id: Date.now(),
+            title,
+            message,
+            courseId,
+            read: false,
+            date: new Date().toLocaleString('vi-VN')
+        });
+        this.saveNotifications();
+        this.renderNotifications();
+    },
+
+    markAllNotificationsRead() {
+        this.state.notifications.forEach(n => n.read = true);
+        this.saveNotifications();
+        this.renderNotifications();
+    },
+
+    renderNotifications() {
+        const list = document.getElementById('notification-list');
+        const badge = document.getElementById('notification-badge');
+        if (!list || !badge) return;
+
+        const unreadCount = this.state.notifications.filter(n => !n.read).length;
+        if (unreadCount > 0) {
+            badge.innerText = unreadCount;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+
+        if (this.state.notifications.length === 0) {
+            list.innerHTML = `<div class="p-4 text-center text-sm text-gray-500 font-medium">Bạn chưa có thông báo nào.</div>`;
+            return;
+        }
+
+        list.innerHTML = '';
+        this.state.notifications.forEach(n => {
+            const bgClass = n.read ? 'bg-white dark:bg-slate-800' : 'bg-blue-50 dark:bg-blue-900/20';
+            const dot = n.read ? '' : `<div class="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5"></div>`;
+            const clickAction = n.courseId ? `onclick="App.showLearningView('${n.courseId}', false)"` : '';
+            const cursorClass = n.courseId ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50' : '';
+            
+            list.innerHTML += `
+                <div class="p-3 border-b border-gray-100 dark:border-slate-700/50 flex items-start gap-3 ${bgClass} ${cursorClass} transition-colors" ${clickAction}>
+                    ${dot}
+                    <div class="flex-1">
+                        <h4 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">${n.title}</h4>
+                        <p class="text-[12px] text-gray-600 dark:text-gray-300 mt-1 font-medium">${n.message}</p>
+                        <span class="text-[10px] text-gray-400 mt-1.5 block">${n.date}</span>
+                    </div>
+                </div>
+            `;
+        });
+    },
+
     // ========================================================
     // QUẢN LÝ GIAO DIỆN (UI/UX)
     // ========================================================
-    isCourseUnlocked(courseId) {
-        if (this.state.user && (this.state.user.role === 'admin' || this.state.user.role === 'teacher')) return true;
+    getCourseOrderStatus(courseId) {
+        if (this.state.user && (this.state.user.role === 'admin' || this.state.user.role === 'teacher')) return 3;
         if (Array.isArray(this.state.orders)) {
             const order = this.state.orders.find(o => String(o.course_name) === String(courseId));
-            if (order && parseInt(order.current_step) === 3) return true;
+            if (order) return parseInt(order.current_step);
         }
-        return false;
+        return 0;
+    },
+
+    isCourseUnlocked(courseId) {
+        return this.getCourseOrderStatus(courseId) === 3;
     },
 
     renderSkeletonCards(count) {
@@ -407,19 +484,25 @@ const App = {
                 const card = document.createElement("div");
                 card.className = "course-card bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col group/card";
 
-                const isUnlocked = this.isCourseUnlocked(course.id);
+                const orderStatus = this.getCourseOrderStatus(course.id);
+                const isUnlocked = orderStatus === 3;
+                const isPending = orderStatus === 1;
 
                 let actionButtonHTML = `
                     <div class="mb-3 flex items-center justify-between border-t border-gray-100 dark:border-slate-800 pt-4 mt-2">
                         <span class="text-sm font-bold text-gray-500 dark:text-gray-400">Học phí:</span>
-                        <span class="text-lg font-black text-[#0056D2] dark:text-blue-400">${Number(course.price || 0).toLocaleString('vi-VN')} đ</span>
+                        <div class="flex items-center gap-2">
+                            ${course.original_price > course.price ? `<span class="text-sm font-semibold text-red-500 dark:text-red-400 line-through">${Number(course.original_price || 0).toLocaleString('vi-VN')} đ</span>` : ''}
+                            <span class="text-lg font-black text-[#0056D2] dark:text-blue-400">${Number(course.price || 0).toLocaleString('vi-VN')} đ</span>
+                        </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="App.showLearningView('${course.id}', true)" class="flex-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-[#0056D2] dark:text-blue-400 font-bold py-2.5 rounded-xl text-sm transition-colors shadow-sm"><i class="fa-solid fa-eye mr-1.5"></i> Xem khóa học</button>
-                        ${!isUnlocked ? `<button onclick="App.addToCart('${course.id}'); event.stopPropagation();" class="w-12 h-12 shrink-0 bg-[#0056D2] hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center shadow-md shadow-blue-500/20" title="Thêm vào giỏ hàng"><i class="fa-solid fa-cart-plus text-lg"></i></button>` : `<button onclick="event.stopPropagation();" class="w-12 h-12 shrink-0 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold rounded-xl text-sm flex items-center justify-center shadow-sm cursor-default" title="Đã sở hữu"><i class="fa-solid fa-check text-xl"></i></button>`}
+                        <button onclick="App.showLearningView('${course.id}', true)" class="flex-1 bg-[#0056D2] hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors shadow-sm"><i class="fa-solid fa-map mr-1.5"></i> Xem lộ trình</button>
+                        <button onclick="App.addToCart('${course.id}'); event.stopPropagation();" class="w-12 h-12 shrink-0 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-[#0056D2] dark:text-blue-400 font-bold rounded-xl text-sm transition-colors flex items-center justify-center shadow-sm" title="Thêm vào giỏ hàng"><i class="fa-solid fa-cart-plus text-lg"></i></button>
                     </div>
                 `;
      
+                // Ép luôn mở màn hình lộ trình (khóa) khi ở trang chủ
                 let clickAction = `App.showLearningView('${course.id}', true)`;
                      
                 const imageUrl = this.getCourseImage(course);
@@ -569,6 +652,12 @@ const App = {
                 overlayTitle = "Bạn đã sở hữu khóa học này";
                 overlayDesc =
                     "Khóa học này đã được ghi danh thành công. Vui lòng truy cập vào phần Khóa học của bạn trong Tài khoản cá nhân để xem nội dung bài giảng.";
+            } else if (this.getCourseOrderStatus(course.id) === 1) {
+                overlayBtnHTML = `<button onclick="openAccountModal('orders')" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-sm flex items-center gap-2 mx-auto mt-6">
+                    <i class="fa-solid fa-hourglass-half"></i> Xem trạng thái đơn hàng
+                   </button>`;
+                overlayTitle = "Đơn hàng đang chờ duyệt";
+                overlayDesc = "Bạn đã đăng ký khóa học này và đang trong quá trình chờ Quản trị viên phê duyệt. Vui lòng quay lại sau.";
             } else {
                 overlayBtnHTML = `<div class="flex items-center justify-center gap-2 mt-6">
                     <button onclick="App.openPaymentModal('${course.id}')" class="bg-[#0056D2] hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-sm flex items-center gap-2">
@@ -1135,8 +1224,9 @@ const App = {
         const cmdParts = command.split(" ");
         const mainCmd = cmdParts[0].toLowerCase();
 
-        if (mainCmd === "help") {
-            output = `Coursera Secure Sandbox v1.0\nAvailable commands:\n  <span class="text-yellow-400">help</span>     - Show this help message\n  <span class="text-yellow-400">scan</span>     - Scan for open ports (mock)\n  <span class="text-yellow-400">submit</span>   - Submit a CTF flag\n  <span class="text-yellow-400">clear</span>    - Clear the terminal screen`;
+        if (mainCmd === "clear") {
+            this.resetTerminalConsole();
+            return; // Không cần render output
         } else if (mainCmd === "submit") {
             if (cmdParts.length > 1) {
                 const flag = cmdParts.slice(1).join(" ");
@@ -1144,13 +1234,26 @@ const App = {
             } else {
                 output = `Usage: submit &lt;flag_string&gt;\nExample: submit COURSERA{...}`;
             }
-        } else if (mainCmd === "scan") {
-            output = `Scanning target 10.0.2.15...\n\nPORT   STATE SERVICE\n22/tcp open  ssh\n80/tcp open  http\n\nScan finished.`;
-        } else if (mainCmd === "clear") {
-            this.resetTerminalConsole();
-            return; // Không cần render output
         } else {
-            output = `bash: command not found: ${command}`;
+            // Gửi lệnh lên Backend để chạy Docker thật
+            try {
+                this.dom.terminalInput.disabled = true;
+                const res = await fetch("Api/student_api.php/terminal", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${this.state.token}`,
+                    },
+                    body: JSON.stringify({ command: command }),
+                });
+                const data = await res.json();
+                output = data.output || "";
+            } catch (e) {
+                output = "Lỗi kết nối tới máy chủ Kali Linux.";
+            } finally {
+                this.dom.terminalInput.disabled = false;
+                this.dom.terminalInput.focus();
+            }
         }
 
         this.dom.terminalHistory.innerHTML += `<div>${output.replace(/\n/g, "<br>")}</div>`;
@@ -1200,6 +1303,12 @@ const App = {
             this.showToast("Bạn đã sở hữu khóa học này rồi!", "warning");
             return;
         }
+        const orderStatus = this.getCourseOrderStatus(courseId);
+        if (orderStatus === 1) {
+            this.showToast("Khóa học này đang chờ Admin duyệt!", "warning");
+            return;
+        }
+
         if (!this.state.cart.includes(courseId)) {
             this.state.cart.push(courseId);
             this.updateCartBadge();
@@ -1695,12 +1804,33 @@ const App = {
         }
     },
 
+    async cancelPendingOrder(orderId) {
+        showConfirmModal("Bạn có chắc chắn muốn hủy yêu cầu ghi danh này không?", async () => {
+            try {
+                const res = await fetch("student_api.php/cancel-order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.state.token}` },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+                const data = await res.json();
+                this.showToast(data.message, res.ok ? "success" : "error");
+                if (res.ok) {
+                    await this.checkAuth();
+                    openAccountModal('orders');
+                    this.renderDashboardCourses();
+                }
+            } catch (e) {
+                this.showToast("Lỗi kết nối khi hủy đơn.", "error");
+            }
+        });
+    },
+
     showToast(message, type = 'info') {
         let container = document.getElementById('toast-container');
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.className = 'fixed top-20 right-5 z-[9999] flex flex-col gap-3 pointer-events-none';
+            container.className = 'fixed top-28 right-5 z-[9999] flex flex-col gap-3 pointer-events-none';
             document.body.appendChild(container);
         }
 
@@ -1848,12 +1978,17 @@ async function openAccountModal(targetSubTab = "profile") {
                 (c) => c.id === order.course_name,
             ) || { title: order.course_name };
 
+            const cancelBtn = parseInt(order.current_step) === 1 
+                ? `<button onclick="App.cancelPendingOrder(${order.id})" class="text-xs font-bold text-red-500 hover:underline mt-2 inline-block"><i class="fa-solid fa-xmark"></i> Hủy yêu cầu</button>` 
+                : '';
+
             ordersContainer.innerHTML += `
                 <div class="flex flex-col p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex-1">
                             <p class="font-bold text-gray-800 dark:text-gray-200 leading-tight">${courseInfo.title}</p>
                             <p class="text-xs text-gray-500 mt-1">Ngày: ${order.created_at} | Giá: ${Number(order.price).toLocaleString("vi-VN")} đ</p>
+                            ${cancelBtn}
                         </div>
                         <div class="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0">${statusHTML}</div>
                     </div>

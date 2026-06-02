@@ -112,7 +112,7 @@ async function loadOrders() {
 
     try {
       // Thêm ?t= thời gian thực để ép trình duyệt không bao giờ lưu bộ nhớ đệm (Cache)
-      const response = await fetch('admin_api.php/orders?t=' + new Date().getTime(), {
+      const response = await fetch('Api/admin_api.php/orders?t=' + new Date().getTime(), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -277,7 +277,7 @@ async function approveOrder(orderId, button) {
     button.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i>`;
 
     try {
-        const response = await fetch(`admin_api.php/approve-order/${orderId}`, {
+        const response = await fetch(`Api/admin_api.php/approve-order/${orderId}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -308,7 +308,7 @@ async function cancelOrder(orderId, button) {
     button.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i>`;
 
     try {
-        const response = await fetch(`admin_api.php/cancel-order/${orderId}`, {
+        const response = await fetch(`Api/admin_api.php/cancel-order/${orderId}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -338,7 +338,7 @@ function downloadInvoice(orderId) {
         showToast("Vui lòng đăng nhập lại!", "error");
         return;
     }
-    const url = `admin_api.php/invoice/${orderId}?token=${token}`;
+    const url = `Api/admin_api.php/invoice/${orderId}?token=${token}`;
     window.open(url, '_blank');
 }
 
@@ -346,7 +346,7 @@ async function deleteOrder(orderId) {
     showConfirmModal(`Bạn có chắc chắn muốn xóa đơn hàng #${orderId}? Hành động này không thể hoàn tác.`, async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/orders/${orderId}`, {
+        const response = await fetch(`Api/admin_api.php/orders/${orderId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -376,7 +376,7 @@ async function deleteSelectedOrders() {
         let successCount = 0;
         for (const id of ids) {
             try {
-                const res = await fetch(`admin_api.php/orders/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(`Api/admin_api.php/orders/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) successCount++;
             } catch (e) {}
         }
@@ -390,7 +390,7 @@ async function clearAllCancelledOrders() {
     showConfirmModal(`Bạn có chắc chắn muốn dọn dẹp (xóa vĩnh viễn) TẤT CẢ các đơn hàng đã bị hủy? Hành động này giúp nhẹ máy chủ và không thể hoàn tác.`, async () => {
         const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
         try {
-            const response = await fetch(`admin_api.php/orders/clear-cancelled`, {
+            const response = await fetch(`Api/admin_api.php/orders/clear-cancelled`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -406,7 +406,7 @@ async function clearAllCancelledOrders() {
 async function loadUsers() {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch('admin_api.php/users?t=' + new Date().getTime(), {
+        const response = await fetch('Api/admin_api.php/users?t=' + new Date().getTime(), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -430,15 +430,20 @@ function renderUsers() {
         if (user.role === 'admin') roleBadge = `<span class="px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-800">Admin</span>`;
         else if (user.role === 'teacher') roleBadge = `<span class="px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800">Teacher</span>`;
 
+        let blockBtn = user.is_blocked 
+            ? `<button onclick="toggleUserBlock(${user.id}, 0)" class="px-3 py-1.5 text-xs font-bold bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-colors" title="Mở khóa tài khoản"><i class="fa-solid fa-unlock"></i></button>`
+            : `<button onclick="toggleUserBlock(${user.id}, 1)" class="px-3 py-1.5 text-xs font-bold bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-lg transition-colors" title="Khóa tài khoản"><i class="fa-solid fa-lock"></i></button>`;
+
         const row = `
             <tr>
                 <td class="p-4"><input type="checkbox" value="${user.id}" class="users-checkbox rounded border-gray-300 cursor-pointer w-4 h-4 text-blue-600" onchange="checkSelected('users')"></td>
                 <td class="p-4 font-bold">#${user.id}</td>
-                <td class="p-4 font-bold text-gray-800 dark:text-gray-200">${user.fullname}</td>
+                <td class="p-4 font-bold text-gray-800 dark:text-gray-200">${user.fullname} <br> <span class="text-xs font-normal text-red-500">${user.is_blocked ? '(Đã bị khóa)' : ''}</span></td>
                 <td class="p-4 text-gray-600 dark:text-gray-300">${user.email}</td>
                 <td class="p-4 text-center">${roleBadge}</td>
                 <td class="p-4 text-center text-gray-500">${user.created_at}</td>
                 <td class="p-4 text-center space-x-2">
+                    ${blockBtn}
                     <button onclick="openUserModal(${user.id})" class="px-3 py-1.5 text-xs font-bold bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"><i class="fa-solid fa-pen"></i></button>
                     <button onclick="deleteUser(${user.id})" class="px-3 py-1.5 text-xs font-bold bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors"><i class="fa-solid fa-trash-can"></i></button>
                 </td>
@@ -480,6 +485,12 @@ function exportUsersToCSV() {
     URL.revokeObjectURL(url);
 }
 
+function generateRandomPassword() {
+    const randomPass = Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 100);
+    document.getElementById('user-password-input').value = randomPass;
+    showToast("Đã tạo mật khẩu ngẫu nhiên!", "success");
+}
+
 function openUserModal(userId = null) {
     const modal = document.getElementById('user-modal');
     const title = document.getElementById('user-modal-title');
@@ -495,7 +506,7 @@ function openUserModal(userId = null) {
         document.getElementById('user-fullname-input').value = user.fullname;
         document.getElementById('user-email-input').value = user.email;
         document.getElementById('user-role-input').value = user.role;
-        document.getElementById('user-password-input').placeholder = "Để trống nếu không muốn đổi";
+        document.getElementById('user-password-input').placeholder = "Để trống nếu không đổi";
     } else {
         // Chế độ thêm mới
         title.innerText = "Thêm học viên mới";
@@ -522,7 +533,7 @@ async function handleUserSubmit(event) {
     const password = document.getElementById('user-password-input').value;
     const role = document.getElementById('user-role-input').value;
 
-    const url = userId ? `admin_api.php/users/${userId}` : 'admin_api.php/users';
+    const url = userId ? `Api/admin_api.php/users/${userId}` : 'Api/admin_api.php/users';
     const method = userId ? 'PUT' : 'POST';
 
     const body = { fullname, email, role };
@@ -553,7 +564,7 @@ async function deleteUser(userId) {
     showConfirmModal(`Bạn có chắc chắn muốn xóa người dùng #${userId}? Hành động này không thể hoàn tác.`, async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/users/${userId}`, {
+        const response = await fetch(`Api/admin_api.php/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -565,6 +576,25 @@ async function deleteUser(userId) {
     } catch (error) {
         showToast("Lỗi kết nối khi xóa người dùng.", "error");
     }
+    });
+}
+
+async function toggleUserBlock(userId, isBlocked) {
+    const actionText = isBlocked ? "khóa" : "mở khóa";
+    showConfirmModal(`Bạn có chắc chắn muốn ${actionText} học viên #${userId} không?`, async () => {
+        const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
+        try {
+            const response = await fetch(`Api/admin_api.php/users/${userId}/toggle-block`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ is_blocked: isBlocked })
+            });
+            const data = await response.json();
+            showToast(data.message, response.ok ? 'success' : 'error');
+            if (response.ok) loadUsers();
+        } catch (error) {
+            showToast(`Lỗi kết nối khi ${actionText} học viên.`, "error");
+        }
     });
 }
 
@@ -583,7 +613,7 @@ async function deleteSelectedUsers() {
         let successCount = 0;
         for (const id of ids) {
             try {
-                const res = await fetch(`admin_api.php/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(`Api/admin_api.php/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) successCount++;
             } catch (e) {}
         }
@@ -649,7 +679,7 @@ async function loadRevenueData() {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     if (!token) return;
     try {
-        const response = await fetch('admin_api.php/revenue?t=' + new Date().getTime(), {
+        const response = await fetch('Api/admin_api.php/revenue?t=' + new Date().getTime(), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -719,7 +749,7 @@ function renderRevenueChart(revenueData) {
 async function loadAdminCourses() {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch('admin_api.php/courses?t=' + new Date().getTime(), {
+        const response = await fetch('Api/admin_api.php/courses?t=' + new Date().getTime(), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -832,7 +862,7 @@ async function handleCourseSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`admin_api.php/courses/${courseId}`, {
+        const response = await fetch(`Api/admin_api.php/courses/${courseId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -866,7 +896,7 @@ async function handleThumbnailUpload(event) {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
 
     try {
-        const response = await fetch('admin_api.php/upload', {
+        const response = await fetch('Api/admin_api.php/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -918,7 +948,7 @@ async function handleAddCourseSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch('admin_api.php/courses', {
+        const response = await fetch('Api/admin_api.php/courses', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -952,7 +982,7 @@ async function handleAddThumbnailUpload(event) {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
 
     try {
-        const response = await fetch('admin_api.php/upload', {
+        const response = await fetch('Api/admin_api.php/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -978,7 +1008,7 @@ async function deleteCourse(courseId) {
     showConfirmModal(`Bạn có chắc chắn muốn xóa khóa học '${courseId}'? Hành động này sẽ xóa khóa học khỏi hệ thống.`, async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/courses/${courseId}`, {
+        const response = await fetch(`Api/admin_api.php/courses/${courseId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1008,7 +1038,7 @@ async function deleteSelectedCourses() {
         let successCount = 0;
         for (const id of ids) {
             try {
-                const res = await fetch(`admin_api.php/courses/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(`Api/admin_api.php/courses/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) successCount++;
             } catch (e) {}
         }
@@ -1068,7 +1098,7 @@ async function handleLessonSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`admin_api.php/lessons/${lessonId}`, {
+        const response = await fetch(`Api/admin_api.php/lessons/${lessonId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -1102,7 +1132,7 @@ async function handleLessonVideoUpload(event) {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
 
     try {
-        const response = await fetch('admin_api.php/upload', {
+        const response = await fetch('Api/admin_api.php/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -1150,7 +1180,7 @@ async function handleAddWeekSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`admin_api.php/courses/${courseId}/weeks`, {
+        const response = await fetch(`Api/admin_api.php/courses/${courseId}/weeks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -1202,7 +1232,7 @@ async function handleEditWeekSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`admin_api.php/weeks/${weekId}`, {
+        const response = await fetch(`Api/admin_api.php/weeks/${weekId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -1225,7 +1255,7 @@ async function deleteWeek(weekId) {
     showConfirmModal(`Bạn có chắc chắn muốn xóa Tuần học này không?`, async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/weeks/${weekId}`, {
+        const response = await fetch(`Api/admin_api.php/weeks/${weekId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1264,7 +1294,7 @@ async function handleAddLessonSubmit(event) {
     btn.disabled = true;
 
     try {
-        const response = await fetch(`admin_api.php/weeks/${weekId}/lessons`, {
+        const response = await fetch(`Api/admin_api.php/weeks/${weekId}/lessons`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
@@ -1287,7 +1317,7 @@ async function deleteLesson(lessonId) {
     showConfirmModal(`Bạn có chắc chắn muốn xóa Bài học này không?`, async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/lessons/${lessonId}`, {
+        const response = await fetch(`Api/admin_api.php/lessons/${lessonId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1306,7 +1336,7 @@ async function deleteLesson(lessonId) {
 async function loadDiscounts() {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch('admin_api.php/discounts?t=' + new Date().getTime(), {
+        const response = await fetch('Api/admin_api.php/discounts?t=' + new Date().getTime(), {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -1325,9 +1355,17 @@ function renderDiscounts() {
     const tableBody = document.getElementById('discounts-table-body');
     tableBody.innerHTML = '';
     allDiscounts.forEach(d => {
-        const statusBadge = d.is_active 
-            ? `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-green-100 text-green-800 cursor-pointer hover:bg-green-200" onclick="toggleDiscountStatus(${d.id}, false)">Hoạt động</span>`
-            : `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-200" onclick="toggleDiscountStatus(${d.id}, true)">Đã khóa</span>`;
+        const isExpired = d.expires_at && new Date(d.expires_at) < new Date();
+        const expiryText = d.expires_at ? new Date(d.expires_at).toLocaleString('vi-VN', {hour: '2-digit', minute:'2-digit', day: '2-digit', month: '2-digit', year: 'numeric'}) : '<span class="text-green-500 font-bold">Vô thời hạn</span>';
+        
+        let statusBadge = '';
+        if (isExpired) {
+            statusBadge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-red-100 text-red-800">Hết hạn</span>`;
+        } else if (d.is_active) {
+            statusBadge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-green-100 text-green-800 cursor-pointer hover:bg-green-200" onclick="toggleDiscountStatus(${d.id}, false)">Hoạt động</span>`;
+        } else {
+            statusBadge = `<span class="px-2 py-1 text-[10px] font-bold rounded-md bg-gray-100 text-gray-800 cursor-pointer hover:bg-gray-200" onclick="toggleDiscountStatus(${d.id}, true)">Đã khóa</span>`;
+        }
 
         tableBody.innerHTML += `
             <tr>
@@ -1335,7 +1373,7 @@ function renderDiscounts() {
                 <td class="p-4 font-mono font-bold text-[#0056D2] dark:text-blue-400">${d.code}</td>
                 <td class="p-4 font-black text-center text-gray-800 dark:text-gray-200">${Math.round(d.discount_rate * 100)}%</td>
                 <td class="p-4 text-center">${statusBadge}</td>
-                <td class="p-4 text-center text-gray-500 text-xs">${d.created_at}</td>
+                <td class="p-4 text-center text-gray-500 text-xs">${expiryText}</td>
                 <td class="p-4 text-center space-x-2">
                     <button onclick="deleteDiscount(${d.id})" class="px-3 py-1.5 text-xs font-bold bg-red-100 hover:bg-red-200 text-red-600 rounded-lg"><i class="fa-solid fa-trash-can"></i> Xóa</button>
                 </td>
@@ -1346,6 +1384,7 @@ function renderDiscounts() {
 
 function openDiscountModal() {
     document.getElementById('discount-form').reset();
+    document.getElementById('discount-expiry-input').value = '';
     document.getElementById('discount-modal').classList.remove('hidden');
     setTimeout(() => document.getElementById('discount-modal').classList.remove('opacity-0'), 10);
 }
@@ -1358,13 +1397,14 @@ async function handleDiscountSubmit(event) {
     event.preventDefault();
     const code = document.getElementById('discount-code-input').value;
     const rate = document.getElementById('discount-rate-input').value;
+    const expires_at = document.getElementById('discount-expiry-input').value;
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     
     try {
-        const response = await fetch('admin_api.php/discounts', {
+        const response = await fetch('Api/admin_api.php/discounts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ code, rate })
+            body: JSON.stringify({ code, rate, expires_at: expires_at ? expires_at : null })
         });
         const data = await response.json();
         showToast(data.message, response.ok ? 'success' : 'error');
@@ -1376,7 +1416,7 @@ async function deleteDiscount(id) {
     showConfirmModal("Bạn có chắc chắn muốn xóa mã giảm giá này?", async () => {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/discounts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        const response = await fetch(`Api/admin_api.php/discounts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         if (response.ok) loadDiscounts();
     } catch (error) { showToast("Lỗi kết nối.", "error"); }
     });
@@ -1397,7 +1437,7 @@ async function deleteSelectedDiscounts() {
         let successCount = 0;
         for (const id of ids) {
             try {
-                const res = await fetch(`admin_api.php/discounts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(`Api/admin_api.php/discounts/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                 if (res.ok) successCount++;
             } catch (e) {}
         }
@@ -1410,7 +1450,7 @@ async function deleteSelectedDiscounts() {
 async function toggleDiscountStatus(id, isActive) {
     const token = JSON.parse(localStorage.getItem('coursera_user_session'))?.token;
     try {
-        const response = await fetch(`admin_api.php/discounts/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ is_active: isActive }) });
+        const response = await fetch(`Api/admin_api.php/discounts/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ is_active: isActive }) });
         if (response.ok) loadDiscounts();
     } catch (error) { showToast("Lỗi kết nối.", "error"); }
 }

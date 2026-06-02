@@ -84,9 +84,9 @@ register_shutdown_function(function () {
 /**
  * REQUIRE FILES
  */
-require_once __DIR__ . '/db_connect.php';
+require_once dirname(__DIR__) . '/db_connect.php';
 
-$autoload = __DIR__ . '/vendor/autoload.php';
+$autoload = dirname(__DIR__) . '/vendor/autoload.php';
 
 if (!file_exists($autoload)) {
 

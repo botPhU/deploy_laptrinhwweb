@@ -1,4 +1,8 @@
 <?php
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+use PHPMailer\PHPMailer\PHPMailer;
+
 ini_set('display_errors', 0);
 error_reporting(0);
 ob_start();
@@ -13,11 +17,8 @@ register_shutdown_function(function() {
     }
 });
 
-require 'db_connect.php';
-require_once 'vendor/autoload.php';
-
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -132,6 +133,29 @@ if ($pathInfo === '/orders' && $method === 'GET') {
         }
         if (!$res) jsonResponse(["message" => "Lỗi Database: " . mb_convert_encoding($conn->error, 'UTF-8', 'auto')], 500);
     }
+
+    // Gửi email thông báo cho học viên
+    $stmt_email = $conn->query("SELECT u.email, u.fullname, o.course_name FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = '$order_id'");
+    if ($row = $stmt_email->fetch_assoc()) {
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $_ENV['SMTP_USER'] ?? 'your_email@gmail.com';
+            $mail->Password   = $_ENV['SMTP_PASS'] ?? 'your_app_password';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = $_ENV['SMTP_PORT'] ?? 587;
+            $mail->CharSet    = 'UTF-8';
+            $mail->setFrom($_ENV['SMTP_USER'] ?? 'no-reply@coursera.vn', 'Coursera Advanced');
+            $mail->addAddress($row['email'], $row['fullname']);
+            $mail->isHTML(true);
+            $mail->Subject = 'Khóa học của bạn đã được duyệt!';
+            $mail->Body    = "<h3>Chào {$row['fullname']},</h3><p>Đơn đăng ký khóa học <b>{$row['course_name']}</b> của bạn đã được Quản trị viên phê duyệt thành công.</p><p>Bạn đã có thể đăng nhập vào hệ thống và bắt đầu học ngay bây giờ!</p><br><p>Chúc bạn học tốt,<br>Coursera Advanced Team</p>";
+            $mail->send();
+        } catch (Exception $e) {}
+    }
+
     jsonResponse(["success" => true, "message" => "Đã duyệt thành công đơn hàng #$order_id."]);
 } elseif (preg_match('#^/cancel-order/([^/]+)$#', $pathInfo, $matches) && $method === 'POST') {
     $order_id = $conn->real_escape_string($matches[1]);
@@ -157,10 +181,15 @@ if ($pathInfo === '/orders' && $method === 'GET') {
 // 2.2 QUẢN LÝ HỌC VIÊN
 } elseif ($pathInfo === '/users' && $method === 'GET') {
     $users = [];
-    $res = $conn->query("SELECT id, fullname, email, role, created_at FROM users ORDER BY id DESC");
+    $check_col = $conn->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
+    if ($check_col->num_rows == 0) {
+        $conn->query("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) DEFAULT 0");
+    }
+    $res = $conn->query("SELECT id, fullname, email, role, created_at, is_blocked FROM users ORDER BY id DESC");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $row['created_at'] = isset($row['created_at']) ? date('d/m/Y', strtotime($row['created_at'])) : '---';
+            $row['is_blocked'] = (int)$row['is_blocked'];
             $users[] = $row;
         }
     }
@@ -199,6 +228,17 @@ if ($pathInfo === '/orders' && $method === 'GET') {
     }
     $stmt->execute();
     jsonResponse(["message" => "Cập nhật thông tin người dùng thành công."]);
+} elseif (preg_match('#^/users/([^/]+)/toggle-block$#', $pathInfo, $matches) && $method === 'PUT') {
+    $uid = $matches[1];
+    $is_blocked = isset($input['is_blocked']) ? (int)$input['is_blocked'] : 0;
+    $check_col = $conn->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
+    if ($check_col->num_rows == 0) {
+        $conn->query("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) DEFAULT 0");
+    }
+    $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ?");
+    $stmt->bind_param("is", $is_blocked, $uid);
+    $stmt->execute();
+    jsonResponse(["message" => $is_blocked ? "Đã khóa tài khoản thành công." : "Đã mở khóa tài khoản thành công."]);
 } elseif (preg_match('#^/users/([^/]+)$#', $pathInfo, $matches) && $method === 'DELETE') {
     $uid = $conn->real_escape_string($matches[1]);
     $conn->query("DELETE FROM users WHERE id = '$uid'");
@@ -421,6 +461,10 @@ HTML;
 } elseif ($pathInfo === '/discounts' && $method === 'GET') {
     $discounts = [];
     $res = $conn->query("SELECT * FROM discount_codes ORDER BY id DESC");
+    if (!$res) {
+        $conn->query("ALTER TABLE discount_codes ADD COLUMN expires_at DATETIME NULL");
+        $res = $conn->query("SELECT * FROM discount_codes ORDER BY id DESC");
+    }
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $row['discount_rate'] = floatval($row['discount_rate']);
@@ -430,17 +474,23 @@ HTML;
     jsonResponse(["discounts" => $discounts]);
 } elseif ($pathInfo === '/discounts' && $method === 'POST') {
     $code = strtoupper(trim($input['code'] ?? '')); $rate = floatval($input['rate'] ?? 0) / 100.0;
+    $expires_at = !empty($input['expires_at']) ? $input['expires_at'] : null;
     
     $stmt = $conn->prepare("SELECT id FROM discount_codes WHERE code = ?");
+    if (!$stmt) {
+        $conn->query("ALTER TABLE discount_codes ADD COLUMN expires_at DATETIME NULL");
+        $stmt = $conn->prepare("SELECT id FROM discount_codes WHERE code = ?");
+    }
     $stmt->bind_param("s", $code);
     $stmt->execute();
     if ($stmt->fetch()) {
+        $stmt->close();
         jsonResponse(["message" => "Mã này đã tồn tại!"], 409);
     }
     $stmt->close();
     
-    $stmt = $conn->prepare("INSERT INTO discount_codes (code, discount_rate) VALUES (?, ?)");
-    $stmt->bind_param("sd", $code, $rate);
+    $stmt = $conn->prepare("INSERT INTO discount_codes (code, discount_rate, expires_at) VALUES (?, ?, ?)");
+    $stmt->bind_param("sds", $code, $rate, $expires_at);
     $stmt->execute();
     jsonResponse(["message" => "Thêm mã giảm giá thành công."], 201);
 } elseif (preg_match('#^/discounts/([^/]+)$#', $pathInfo, $matches) && $method === 'DELETE') {

@@ -206,7 +206,7 @@
                     <th class="p-4 text-left">Mã giảm giá</th>
                     <th class="p-4 text-center">Mức giảm (%)</th>
                     <th class="p-4 text-center">Trạng thái</th>
-                    <th class="p-4 text-center">Ngày tạo</th>
+                    <th class="p-4 text-center">Hạn sử dụng</th>
                     <th class="p-4 text-center">Hành động</th>
                   </tr>
                 </thead>
@@ -236,8 +236,11 @@
                 <input id="user-email-input" type="email" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm text-gray-900 dark:text-white" required>
             </div>
             <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Mật khẩu (Để trống nếu không muốn đổi)</label>
-                <input id="user-password-input" type="password" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm text-gray-900 dark:text-white">
+                <div class="flex justify-between items-end mb-1">
+                    <label class="block text-xs font-bold text-gray-500">Mật khẩu (Để trống nếu không đổi)</label>
+                    <button type="button" onclick="generateRandomPassword()" class="text-[10px] font-bold text-[#0056D2] hover:underline dark:text-blue-400">Tạo ngẫu nhiên</button>
+                </div>
+                <input id="user-password-input" type="text" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm text-gray-900 dark:text-white" placeholder="Nhập mật khẩu mới...">
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1">Vai trò</label>
@@ -414,6 +417,10 @@
                 <label class="block text-xs font-bold text-gray-500 mb-1">Mức giảm giá (%)</label>
                 <input id="discount-rate-input" type="number" min="1" max="100" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm text-gray-900 dark:text-white" required>
             </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Hạn sử dụng (Để trống = Vô thời hạn)</label>
+                <input id="discount-expiry-input" type="datetime-local" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none text-sm text-gray-900 dark:text-white cursor-pointer">
+            </div>
             
             <button type="submit" id="discount-submit-btn" class="w-full bg-[#0056D2] hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-sm mt-2">Lưu mã giảm giá</button>
         </form>
@@ -421,8 +428,8 @@
   </div>
 
   <!-- Toast Container -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
 
-  <script src="admin.js?v=1002"></script>
+  <script src="admin.js?v=1003"></script>
 </body>
 </html>

@@ -142,7 +142,7 @@
         btn.classList.add('opacity-75', 'cursor-not-allowed');
 
         try {
-            const response = await fetch('register.php', {
+            const response = await fetch('Auth/register.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fullname: fullname, email: email, password: password })
@@ -211,7 +211,7 @@
       statusMsg.innerText = "Đang xác thực Google...";
 
       try {
-        const res = await fetch('login.php', {
+        const res = await fetch('Auth/login.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ google_token: response.credential })

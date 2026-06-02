@@ -1,3 +1,6 @@
 /vendor/
 .env
 .vscode/
+uploads/
+Api/uploads/
+*.zip

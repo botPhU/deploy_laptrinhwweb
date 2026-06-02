@@ -13,8 +13,8 @@ register_shutdown_function(function() {
     }
 });
 
-require 'db_connect.php';
-if (file_exists('vendor/autoload.php')) require_once 'vendor/autoload.php';
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -472,11 +472,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
                 </div>
             </div>
         </div>
-        <script>
-            window.onload = function() {
-                setTimeout(function() { window.print(); }, 500);
-            };
-        </script>
     </body>
     </html>
     HTML;
@@ -500,6 +495,30 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     } else {
         jsonResponse(["success" => false, "message" => "Sai cấu trúc Flag! Chuỗi mật mã băm trích xuất không trùng khớp."]);
     }
+} elseif ($pathInfo === '/terminal' && $method === 'POST') {
+    $command = trim($input['command'] ?? '');
+    if (empty($command)) jsonResponse(["output" => ""]);
+    
+    // RẤT QUAN TRỌNG: Bọc lệnh lại để tránh hacker tiêm mã độc ra máy chủ gốc
+    $safe_command = escapeshellarg($command);
+    
+    // Khắc phục lỗi Windows/XAMPP không nhận diện được lệnh docker
+    $docker_path = "docker";
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        if (file_exists("C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe")) {
+            $docker_path = '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"';
+        }
+    }
+
+    // Gọi Docker chạy lệnh trong container có tên là 'coursera_kali'
+    // Lệnh 2>&1 giúp lấy cả thông báo lỗi (nếu gõ sai lệnh) và kết quả
+    $output = shell_exec($docker_path . " exec coursera_kali bash -c " . $safe_command . " 2>&1");
+    
+    if ($output === null) {
+        $output = "Lỗi: Hệ thống không thể gọi lệnh Docker. Vui lòng đảm bảo Docker Desktop đang mở và máy ảo đang chạy.";
+    }
+    
+    jsonResponse(["output" => trim($output)]);
 } elseif ($pathInfo === '/mock-webhook' && $method === 'POST') {
     $order_id = $input['order_id'] ?? '';
     if (!$order_id) jsonResponse(["message" => "Thiếu mã đơn hàng!"], 400);

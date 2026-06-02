@@ -13,8 +13,8 @@ register_shutdown_function(function() {
     }
 });
 
-require 'db_connect.php';
-if (file_exists('vendor/autoload.php')) require_once 'vendor/autoload.php';
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -67,6 +67,13 @@ if (isset($data->google_token)) {
     
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
+        
+        if (array_key_exists('is_blocked', $user) && $user['is_blocked'] == 1) {
+            if (ob_get_level()) ob_clean();
+            http_response_code(403);
+            echo json_encode(["message" => "Tài khoản của bạn đã bị khóa do vi phạm chính sách! Vui lòng liên hệ Admin."]);
+            exit();
+        }
     } else {
         // Tự động tạo tài khoản nếu đăng nhập lần đầu (cấp mật khẩu ngẫu nhiên siêu bảo mật)
         $hashed = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
@@ -137,6 +144,18 @@ if ($result->num_rows > 0) {
         $conn->query("ALTER TABLE users ADD COLUMN locked_until DATETIME NULL");
         $user['failed_attempts'] = 0;
         $user['locked_until'] = null;
+    }
+
+    if (!array_key_exists('is_blocked', $user)) {
+        $conn->query("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) DEFAULT 0");
+        $user['is_blocked'] = 0;
+    }
+
+    if ($user['is_blocked'] == 1) {
+        if (ob_get_level()) ob_clean();
+        http_response_code(403);
+        echo json_encode(["message" => "Tài khoản của bạn đã bị khóa do vi phạm chính sách! Vui lòng liên hệ Admin."]);
+        exit();
     }
 
     // Kiểm tra xem tài khoản có đang bị khóa không

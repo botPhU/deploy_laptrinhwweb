@@ -14,8 +14,8 @@ register_shutdown_function(function() {
 });
 
 /** @var mysqli $conn */
-require 'db_connect.php';
-require 'vendor/autoload.php';
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

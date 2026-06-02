@@ -1,10 +1,14 @@
 <?php
 // forgot_password.php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 ob_start();
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-require 'db_connect.php';
+require '../db_connect.php';
+if (file_exists('../vendor/autoload.php')) require_once '../vendor/autoload.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -12,9 +16,29 @@ header('Content-Type: application/json; charset=utf-8');
  * Hàm gửi OTP giả lập (hoặc kết nối SMTP)
  */
 function sendEmail($email, $otp) {
-    // Nếu bạn có cấu hình SMTP như trong app.py, hãy tích hợp PHPMailer tại đây
-    // Ở đây tôi trả về true để giả lập đã gửi thành công
-    return true; 
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $_ENV['SMTP_USER'] ?? 'your_email@gmail.com';
+        $mail->Password   = $_ENV['SMTP_PASS'] ?? 'your_app_password';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = $_ENV['SMTP_PORT'] ?? 587;
+        $mail->CharSet    = 'UTF-8';
+
+        $mail->setFrom($_ENV['SMTP_USER'] ?? 'no-reply@coursera.vn', 'Coursera Advanced');
+        $mail->addAddress($email);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Mã xác nhận khôi phục mật khẩu';
+        $mail->Body    = "<h3>Khôi phục mật khẩu</h3><p>Mã OTP của bạn là: <b style='color:#0056D2;font-size:20px;'>{$otp}</b></p><p>Mã này có hiệu lực trong 15 phút.</p><br><p>Trân trọng,<br>Coursera Advanced Team</p>";
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
 $input = json_decode(file_get_contents('php://input'), true);

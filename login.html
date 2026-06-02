@@ -127,7 +127,7 @@
       errorBox.classList.add('hidden');
 
       try {
-        const response = await fetch('login.php', {
+        const response = await fetch('Auth/login.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -143,7 +143,12 @@
           }));
 
           if (data.user.role === 'admin' || data.user.role === 'teacher') {
-            window.location.href = 'admin.html';
+            const audio = new Audio('sounds/ping.mp3');
+            audio.play().catch(e => console.log(e));
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Đăng nhập thành công!</span>';
+            setTimeout(() => {
+              window.location.href = 'admin.html';
+            }, 1000);
           } else {
             window.location.href = 'coursera-index.html'; 
           }
@@ -181,7 +186,7 @@
       errorBox.classList.add('hidden');
 
       try {
-        const res = await fetch('login.php', {
+        const res = await fetch('Auth/login.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ google_token: response.credential })
@@ -194,7 +199,13 @@
             token: data.token, role: data.user.role, fullname: data.user.fullname
           }));
 
-          window.location.href = (data.user.role === 'admin' || data.user.role === 'teacher') ? 'admin.html' : 'coursera-index.html'; 
+          if (data.user.role === 'admin' || data.user.role === 'teacher') {
+            const audio = new Audio('sounds/ping.mp3');
+            audio.play().catch(e => console.log(e));
+            setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+          } else {
+            window.location.href = 'coursera-index.html';
+          }
         } else {
           errorText.innerText = data.message || "Đăng nhập Google thất bại.";
           errorBox.classList.remove('hidden');
