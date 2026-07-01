@@ -21,20 +21,15 @@ require_once dirname(__DIR__) . '/db_connect.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-/**
- * Hàm gửi OTP giả lập (hoặc kết nối SMTP)
- */
 function sendEmail($email, $otp) {
     $mail = new PHPMailer(true);
     try {
-        // Lấy cấu hình SMTP từ biến môi trường, không hardcode
         $smtp_host = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
         $smtp_user = $_ENV['SMTP_USER'] ?? null;
         $smtp_pass = $_ENV['SMTP_PASS'] ?? null;
         $smtp_port = $_ENV['SMTP_PORT'] ?? 587;
 
         if (!$smtp_user || !$smtp_pass) {
-            // Nếu không có cấu hình, không gửi email và báo lỗi
             error_log("Lỗi gửi email: Cấu hình SMTP (user/pass) chưa được thiết lập trong file .env");
             return false;
         }
@@ -72,7 +67,6 @@ if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit();
 }
 
-/** @var mysqli $conn */
 $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
@@ -84,16 +78,13 @@ if (!$stmt->fetch()) {
 }
 $stmt->close();
 
-// Tạo mã OTP
 $otp = strval(random_int(100000, 999999));
 $expires_at = date('Y-m-d H:i:s', strtotime('+15 minutes'));
 
-// Lưu vào bảng otp_codes (Đảm bảo bảng này đã tồn tại trong DB)
 $stmt = $conn->prepare("INSERT INTO otp_codes (email, otp, expires_at) VALUES (?, ?, ?)");
 $stmt->bind_param("sss", $email, $otp, $expires_at);
 
 if ($stmt->execute()) {
-    // Gửi email thực tế hoặc log lại để test
     if (sendEmail($email, $otp)) {
         echo json_encode(["status" => "success", "message" => "Mã OTP đã được gửi tới email của bạn."]);
     } else {

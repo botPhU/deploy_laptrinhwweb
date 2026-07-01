@@ -111,7 +111,6 @@ async function loadOrders() {
     }
 
     try {
-      // Thêm ?t= thời gian thực để ép trình duyệt không bao giờ lưu bộ nhớ đệm (Cache)
       const response = await fetch('Api/admin_api.php/orders?t=' + new Date().getTime(), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -138,7 +137,6 @@ function renderOrders() {
     document.getElementById('btn-delete-orders') && document.getElementById('btn-delete-orders').classList.add('hidden');
     document.getElementById('btn-delete-orders') && document.getElementById('btn-delete-orders').classList.remove('flex');
 
-    // Thêm nút Dọn rác tự động
     const btnDeleteOrders = document.getElementById('btn-delete-orders');
     if (btnDeleteOrders && !document.getElementById('btn-clear-cancelled')) {
         const clearBtn = document.createElement('button');
@@ -235,11 +233,9 @@ function exportOrdersToCSV() {
         return;
     }
 
-    // Tạo tiêu đề (header) cho file CSV
     const headers = ["ID Ghi danh", "Học viên", "Email", "Khóa học", "Trạng thái", "Tổng tiền", "Ngày tạo"];
     const csvRows = [headers.join(",")];
 
-    // Thêm dữ liệu từng đơn hàng vào
     allOrders.forEach(order => {
         let statusStr = "Không xác định";
         const step = parseInt(order.current_step);
@@ -248,7 +244,7 @@ function exportOrdersToCSV() {
         else if (step === 4) statusStr = "Đã hủy";
         const row = [
             order.id,
-            `"${order.user_fullname}"`, // Bọc trong ngoặc kép để an toàn với dấu phẩy
+            `"${order.user_fullname}"`, 
             `"${order.user_email}"`,
             `"${order.course_name.replace(/,/g, ', ')}"`,
             `"${statusStr}"`,
@@ -259,7 +255,7 @@ function exportOrdersToCSV() {
     });
 
     const csvString = csvRows.join("\n");
-    const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" }); // Thêm BOM để Excel không lỗi font
+    const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" }); 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -284,7 +280,6 @@ async function approveOrder(orderId, button) {
         showToast(data.message, response.ok ? 'success' : 'error');
 
         if (response.ok) {
-            // Ẩn lập tức các nút và thay thế bằng text
             button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-green-500 font-bold text-xs bg-green-50 px-2 py-1.5 rounded-md border border-green-200"><i class="fa-solid fa-check"></i> Đã duyệt</span>';
             setTimeout(() => loadOrders(), 1000); 
         } else {
@@ -315,7 +310,6 @@ async function cancelOrder(orderId, button) {
         showToast(data.message, response.ok ? 'success' : 'error');
 
         if (response.ok) {
-            // Ẩn lập tức các nút và thay thế bằng text
             button.closest('.action-buttons-wrapper').innerHTML = '<span class="text-red-500 font-bold text-xs bg-red-50 px-2 py-1.5 rounded-md border border-red-200"><i class="fa-solid fa-xmark"></i> Đã hủy</span>';
             setTimeout(() => loadOrders(), 1000); 
         } else {
@@ -456,11 +450,9 @@ function exportUsersToCSV() {
         return;
     }
 
-    // Tạo tiêu đề (header) cho file CSV
     const headers = ["ID", "Họ và tên", "Email", "Vai trò", "Ngày gia nhập"];
     const csvRows = [headers.join(",")];
 
-    // Thêm dữ liệu từng học viên vào
     allUsers.forEach(user => {
         const row = [
             user.id,
@@ -473,7 +465,7 @@ function exportUsersToCSV() {
     });
 
     const csvString = csvRows.join("\n");
-    const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" }); // \uFEFF giúp Excel nhận diện font Tiếng Việt
+    const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" }); 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -495,7 +487,6 @@ function openUserModal(userId = null) {
     form.reset();
 
     if (userId) {
-        // Chế độ sửa
         const user = allUsers.find(u => String(u.id) === String(userId));
         if (!user) return;
         title.innerText = "Chỉnh sửa thông tin học viên";
@@ -505,7 +496,6 @@ function openUserModal(userId = null) {
         document.getElementById('user-role-input').value = user.role;
         document.getElementById('user-password-input').placeholder = "Để trống nếu không đổi";
     } else {
-        // Chế độ thêm mới
         title.innerText = "Thêm học viên mới";
         document.getElementById('user-id-input').value = '';
         document.getElementById('user-password-input').placeholder = "Mật khẩu bắt buộc";
@@ -629,18 +619,14 @@ async function loadDashboardData() {
         });
         const data = await response.json();
         if (response.ok) {
-            // 1. Update stat cards
             document.getElementById('stat-revenue').innerText = Number(data.stats.revenue || 0).toLocaleString('vi-VN') + ' đ';
             document.getElementById('stat-orders').innerText = data.stats.orders || 0;
             document.getElementById('stat-users').innerText = data.stats.users || 0;
 
-            // 2. Render chart
             renderRevenueChart(data.revenue_chart);
 
-            // 3. Render recent orders
             renderDashboardRecentOrders(data.recent_orders);
 
-            // 4. Render new users
             renderDashboardNewUsers(data.new_users);
         }
     } catch (error) {

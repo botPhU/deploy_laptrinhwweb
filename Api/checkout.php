@@ -13,7 +13,6 @@ register_shutdown_function(function() {
     }
 });
 
-/** @var mysqli $conn */
 require_once dirname(__DIR__) . '/db_connect.php';
 
 header('Content-Type: application/json; charset=utf-8');

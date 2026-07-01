@@ -15,37 +15,31 @@
   </head>
   <body class="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     
-    <!-- Top Marquee (Dòng chữ chạy) -->
     <div class="bg-gradient-to-r from-[#0056D2] to-blue-800 text-white text-xs font-bold py-2 overflow-hidden flex whitespace-nowrap shrink-0 z-[100] relative shadow-sm cursor-default">
       <div class="animate-marquee">
         🚀 THÔNG BÁO: Chào mừng đến với Coursera Advanced! Hệ thống Kali Linux Sandbox đã được nâng cấp lên phiên bản mới nhất. Hãy hoàn thành các lộ trình ghi danh để mở khóa ngay môi trường thực chiến nhé! 🛡️
       </div>
     </div>
 
-    <!-- Page Loader -->
     <div id="page-loader" class="fixed inset-0 bg-slate-50 dark:bg-[#0B0F19] z-[9999] flex items-center justify-center transition-opacity duration-300">
       <div class="w-12 h-12 border-4 border-slate-200 dark:border-slate-700 border-t-[#0056D2] rounded-full animate-spin"></div>
     </div>
 
     <header class="h-16 shrink-0 flex items-center justify-between px-4 md:px-6 bg-white dark:bg-[#0B0F19] border-b border-gray-200 dark:border-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.03)] z-30 relative">
-      <!-- Bên Trái: Logo & Danh mục -->
       <div class="flex items-center gap-4 md:gap-6 md:w-1/3 h-full">
         <h1 onclick="App.showCatalogView()" class="text-2xl font-black text-[#0056D2] tracking-tight dark:text-blue-500 cursor-pointer">Coursera</h1>
         
-        <!-- Nút Danh Mục -->
         <div class="relative group hidden md:flex items-center h-full cursor-pointer">
           <button class="text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-[#0056D2] dark:hover:text-blue-400 flex items-center gap-1.5 transition-colors h-full">
             Danh mục <i class="fa-solid fa-chevron-down text-[10px] mt-0.5"></i>
           </button>
           <div class="absolute top-full left-0 w-[400px] lg:w-[600px] bg-white dark:bg-slate-800 rounded-b-2xl shadow-xl border border-gray-100 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden p-4">
             <ul id="header-category-list" class="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                <!-- Danh sách khóa học render bằng JS -->
             </ul>
           </div>
         </div>
       </div>
       
-      <!-- Ở Giữa: Thanh Tìm Kiếm (Responsive) -->
       <div class="flex-1 flex justify-end md:justify-center px-2 md:px-4 max-w-xl">
         <div class="relative w-full max-w-[180px] md:max-w-full group">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-[#0056D2] transition-colors"></i></div>
@@ -53,7 +47,6 @@
         </div>
       </div>
 
-      <!-- Bên Phải: Menu Cá nhân -->
       <div class="flex items-center justify-end gap-2 md:gap-4 md:w-1/3">
         <button id="btn-back-to-dashboard" onclick="App.showCatalogView()" class="hidden text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-1.5 transition">
           <i class="fa-solid fa-house text-lg md:text-sm"></i> <span class="hidden md:inline">Trang chủ</span>
@@ -64,13 +57,11 @@
           <i class="fa-solid fa-sun hidden dark:block"></i>
         </button>
         
-        <!-- Nút Thông Báo (Mới thêm - Phát triển lên) -->
         <div class="relative group cursor-pointer z-50 ml-1 md:ml-2">
           <button class="relative w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition shadow-sm border border-gray-200 dark:border-slate-700">
             <i class="fa-regular fa-bell"></i>
             <span id="notification-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
           </button>
-          <!-- Dropdown Thông báo -->
           <div class="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-none border border-gray-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 overflow-hidden">
             <div class="p-3 border-b border-gray-100 dark:border-slate-700/50 flex items-center justify-between bg-gray-50 dark:bg-slate-800/80">
               <span class="text-sm font-black text-gray-900 dark:text-white">Thông báo</span>
@@ -112,16 +103,13 @@
       </div>
     </header>
 
-    <!-- Main Content Wrapper -->
     <div class="flex-1 overflow-y-auto">
       <main id="dashboard-view" class="flex-1 overflow-y-auto px-6 py-8 md:px-12 animate-fade-in-up block">
         <div class="max-w-7xl mx-auto space-y-8">
           <div id="hero-section" class="bg-gray-900 dark:bg-[#0B0F19] rounded-3xl relative overflow-hidden flex flex-col md:flex-row items-center border border-gray-200/60 dark:border-slate-800 mb-10 shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-none group">
             
-            <!-- Phần hình ảnh minh họa (Tràn toàn bộ khung) -->
             <div class="absolute inset-0 z-0">
               <img src="images/anhnen.jpg" alt="Cyber Security Learning" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000 ease-out">
-              <!-- Lớp phủ mờ màu tối giúp chữ nổi bật -->
               <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/90 to-transparent dark:from-[#0B0F19] dark:via-[#0B0F19]/90"></div>
               <div class="absolute inset-0 bg-black/40 md:hidden"></div>
             </div>
@@ -151,20 +139,17 @@
               <span class="text-sm text-gray-500 font-semibold whitespace-nowrap" id="course-count">Hiện thị 0 lộ trình</span>
             </div>
             
-            <!-- Thanh Lọc Lĩnh Vực (Ngang) -->
             <div id="category-pills" class="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700 pt-1"></div>
 
             <div id="dashboard-courses-grid"></div>
             <div id="dashboard-pagination" class="pt-4 flex justify-center"></div>
           </div>
 
-          <!-- Tại sao chọn chúng tôi -->
           <div class="mt-24 mb-10 pt-10 border-t border-gray-100 dark:border-slate-800/50">
             <h3 class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tight mb-12 text-center">
               Tại sao bạn nên lựa chọn nền tảng của chúng tôi?
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              <!-- Card 1 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-900/10 text-[#0056D2] dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-medal"></i>
@@ -172,7 +157,6 @@
                 <h4 class="font-bold text-gray-900 dark:text-white text-xl mb-3">Uy Tín - Chất Lượng</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Được học thử trước khi thanh toán — hoàn tiền nếu không đúng mô tả.</p>
               </div>
-              <!-- Card 2 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-900/10 text-green-500 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-bolt"></i>
@@ -180,7 +164,6 @@
                 <h4 class="font-bold text-gray-900 dark:text-white text-xl mb-3">Kích Hoạt Nhanh Chóng</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Học ngay sau khi thanh toán — duyệt khóa học trong vài giây.</p>
               </div>
-              <!-- Card 3 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-900/10 text-purple-500 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-laptop-code"></i>
@@ -188,7 +171,6 @@
                 <h4 class="font-bold text-gray-900 dark:text-white text-xl mb-3">Lab Thực Chiến</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Hệ thống Kali Linux Sandbox tích hợp sẵn, thực hành ngay trên trình duyệt.</p>
               </div>
-              <!-- Card 4 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-900/10 text-yellow-500 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-headset"></i>
@@ -196,7 +178,6 @@
                 <h4 class="font-bold text-gray-900 dark:text-white text-xl mb-3">Hỗ Trợ 24/7</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Trợ lý Cyber AI và đội ngũ chuyên gia luôn sẵn sàng giải đáp thắc mắc.</p>
               </div>
-              <!-- Card 5 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-900/10 text-red-500 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-certificate"></i>
@@ -204,7 +185,6 @@
                 <h4 class="font-bold text-gray-900 dark:text-white text-xl mb-3">Chứng Chỉ Uy Tín</h4>
                 <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Nhận chứng nhận hoàn thành khóa học sau khi vượt qua các bài kiểm tra thực tế.</p>
               </div>
-              <!-- Card 6 -->
               <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-gray-100 dark:border-slate-800/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:-translate-y-1.5 transition-all duration-300 group">
                 <div class="w-14 h-14 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/40 dark:to-teal-900/10 text-teal-500 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-inner">
                   <i class="fa-solid fa-rotate"></i>
@@ -216,58 +196,55 @@
           </div>
         </div>
 
-        <!-- Phản hồi Học viên (Marquee) -->
         <div class="mt-20 mb-8 overflow-hidden w-full relative group">
           <h3 class="text-2xl md:text-3xl font-black text-center text-gray-900 dark:text-white mb-10 tracking-tight">Học viên nói gì về chúng tôi?</h3>
           <div class="relative w-full flex overflow-hidden">
             <div class="absolute inset-y-0 left-0 w-16 md:w-32 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10 pointer-events-none"></div>
             <div class="absolute inset-y-0 right-0 w-16 md:w-32 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10 pointer-events-none"></div>
             
-            <!-- Container 1 -->
             <div class="flex animate-marquee-fast gap-6 shrink-0 pr-6">
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Khóa học rất chi tiết và dễ hiểu. Môi trường Kali Linux Sandbox hoạt động cực kỳ mượt mà, giúp tôi thực hành ngay lập tức."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=11" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Nguyễn Văn An</h4><p class="text-[11px] font-semibold text-gray-500">Kỹ sư An toàn thông tin</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm8.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Nguyễn Văn An</h4><p class="text-[11px] font-semibold text-gray-500">Kỹ sư An toàn thông tin</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Nền tảng tuyệt vời nhất mà tôi từng trải nghiệm. Không chỉ lý thuyết mà còn có rất nhiều bài Lab chất lượng."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=32" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Trần Thị Bích</h4><p class="text-[11px] font-semibold text-gray-500">Sinh viên năm cuối</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm7.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Trần Thị Bích</h4><p class="text-[11px] font-semibold text-gray-500">Sinh viên năm cuối</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Chứng chỉ sau khi hoàn thành khóa học rất đẹp và chuyên nghiệp, giúp tôi ghi điểm dễ dàng với nhà tuyển dụng."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=15" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Lê Hoàng Nam</h4><p class="text-[11px] font-semibold text-gray-500">Chuyên viên IT</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm6.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Lê Hoàng Nam</h4><p class="text-[11px] font-semibold text-gray-500">Chuyên viên IT</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Giảng viên giải thích rất dễ hiểu. Đặc biệt Cyber AI Assistant hỗ trợ giải đáp thắc mắc 24/7 cực kỳ thông minh."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=47" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Phạm Thu Trang</h4><p class="text-[11px] font-semibold text-gray-500">Lập trình viên Web</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm5.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Phạm Thu Trang</h4><p class="text-[11px] font-semibold text-gray-500">Lập trình viên Web</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Một khoản đầu tư xứng đáng. Tôi đã tự tin hơn rất nhiều khi tham gia đánh giá bảo mật hệ thống mạng doanh nghiệp."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=53" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Hoàng Anh Quân</h4><p class="text-[11px] font-semibold text-gray-500">Network Admin</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm4.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Hoàng Anh Quân</h4><p class="text-[11px] font-semibold text-gray-500">Network Admin</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Bài giảng cô đọng, đi thẳng vào vấn đề. Cổng thanh toán VietQR hoạt động tức thì, khóa học được duyệt ngay lập tức."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=41" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Bùi Thu Hương</h4><p class="text-[11px] font-semibold text-gray-500">Security Analyst</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm3.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Bùi Thu Hương</h4><p class="text-[11px] font-semibold text-gray-500">Security Analyst</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Kiến thức bám sát thực tế, có thể áp dụng vào công việc ngay. Các bài tập Lab rất thử thách và vô cùng thú vị!"</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=60" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Đỗ Minh Tuấn</h4><p class="text-[11px] font-semibold text-gray-500">DevOps Engineer</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm2.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Đỗ Minh Tuấn</h4><p class="text-[11px] font-semibold text-gray-500">DevOps Engineer</p></div></div>
               </div>
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Quá đỉnh! Giao diện trang web cực kỳ mượt mà. Không có gì để chê với một nền tảng học thuật chất lượng như thế này."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=65" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Ngô Đức Khải</h4><p class="text-[11px] font-semibold text-gray-500">System Architect</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm1.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Nguyễn Trần Tú Mi</h4><p class="text-[11px] font-semibold text-gray-500">System Architect</p></div></div>
               </div>
             </div>
             
-            <!-- Container 2 (Duplicate for infinite effect) -->
             <div class="flex animate-marquee-fast gap-6 shrink-0 pr-6" aria-hidden="true">
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
@@ -307,13 +284,12 @@
               <div class="w-[350px] bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none shrink-0 cursor-default">
                 <div class="flex items-center gap-1 text-yellow-400 text-sm mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
                 <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">"Quá đỉnh! Giao diện trang web cực kỳ mượt mà. Không có gì để chê với một nền tảng học thuật chất lượng như thế này."</p>
-                <div class="flex items-center gap-3"><img src="https://i.pravatar.cc/150?img=65" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Ngô Đức Khải</h4><p class="text-[11px] font-semibold text-gray-500">System Architect</p></div></div>
+                <div class="flex items-center gap-3"><img src="images/rcm1.jpg" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white dark:border-slate-800 shadow-sm"><div><h4 class="text-sm font-bold text-gray-900 dark:text-white">Nguyễn Trần Tú Mi</h4><p class="text-[11px] font-semibold text-gray-500">System Architect</p></div></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Footer cân đối -->
         <footer class="bg-white dark:bg-[#0B0F19] border-t border-gray-100 dark:border-slate-800/50 pt-16 pb-8 px-6 shrink-0 z-10 -mx-6 md:-mx-12 -mb-8 mt-16 shadow-[0_-4px_20px_rgba(0,0,0,0.02)] dark:shadow-none">
           <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
             <div class="col-span-1 md:col-span-2 lg:col-span-2 pr-0 lg:pr-8">
@@ -353,7 +329,7 @@
             </div>
           </div>
           <div class="mt-16 border-t border-gray-200 dark:border-slate-800 pt-8 pb-4 flex flex-col md:flex-row items-center justify-between text-sm text-gray-500 dark:text-gray-400 max-w-7xl mx-auto">
-            <p>&copy; 2024 Coursera Advanced. A project for educational purposes.</p>
+            <p>&copy; 2026 Coursera Advanced. Một đề tài của nhóm 11.</p>
             <div class="flex items-center gap-4 mt-4 md:mt-0">
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/VietQR_logo.svg/1024px-VietQR_logo.svg.png" class="h-4 opacity-50 grayscale hover:grayscale-0 transition-all">
             </div>
@@ -550,7 +526,6 @@
       </div>
     </div>
 
-    <!-- Cart Modal -->
     <div id="cart-modal" class="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center hidden">
       <div class="bg-white dark:bg-slate-900 w-full max-w-lg mx-4 rounded-3xl p-6 border border-gray-100 dark:border-slate-800 shadow-2xl space-y-5 animate-fade flex flex-col max-h-[80vh]">
         <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3 shrink-0">
@@ -636,7 +611,6 @@
       </div>
     </div>
 
-    <!-- Review Modal -->
     <div id="review-modal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center hidden">
       <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl p-6 border border-gray-100 dark:border-slate-800 shadow-2xl space-y-5 animate-fade">
         <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
@@ -660,7 +634,6 @@
       </div>
     </div>
 
-    <!-- Congratulation Modal -->
     <div id="congrats-modal" class="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center hidden">
       <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl p-8 border border-gray-100 dark:border-slate-800 shadow-2xl text-center relative overflow-hidden animate-fade" id="congrats-modal-content">
         <div class="absolute -top-20 -right-20 w-40 h-40 bg-green-500/20 rounded-full blur-3xl pointer-events-none"></div>

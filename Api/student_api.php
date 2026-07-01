@@ -1,18 +1,4 @@
 <?php
-ob_start();
-ini_set('display_errors', 0);
-error_reporting(0);
-
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        if (ob_get_level()) ob_clean();
-        http_response_code(500);
-        echo json_encode(["message" => "Lỗi sập PHP: " . $error['message'] . " (Dòng " . $error['line'] . ")"]);
-        exit;
-    }
-});
-
 require_once dirname(__DIR__) . '/db_connect.php';
 
 use Firebase\JWT\JWT;
@@ -34,15 +20,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
 function jsonResponse($data, $status = 200) {
-    if (ob_get_level()) ob_clean();
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-// ==============================================
-// 1. CÁC API KHÔNG CẦN ĐĂNG NHẬP (LẤY LẠI MẬT KHẨU)
-// ==============================================
 if ($pathInfo === '/verify-otp' && $method === 'POST') {
     $email = $input['email'] ?? '';
     $otp = $input['otp'] ?? '';
@@ -77,7 +59,6 @@ if ($pathInfo === '/verify-otp' && $method === 'POST') {
         $stmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE email = ?");
         $stmt->bind_param("ss", $hashed, $email);
         $stmt->execute();
-        // [FIX] Vá lỗi SQL Injection
         $stmt_del = $conn->prepare("DELETE FROM otp_codes WHERE email = ?");
         $stmt_del->bind_param("s", $email);
         $stmt_del->execute();
@@ -87,14 +68,9 @@ if ($pathInfo === '/verify-otp' && $method === 'POST') {
     }
 }
 
-// ==============================================
-// 1.5 XÁC THỰC CHỨNG CHỈ (PUBLIC API)
-// ==============================================
 if ($pathInfo === '/verify-certificate' && $method === 'POST') {
     $cert_code = strtoupper(trim($input['code'] ?? ''));
     if (empty($cert_code)) jsonResponse(["message" => "Vui lòng nhập mã chứng chỉ!"], 400);
-
-    // Định dạng mong đợi: CERT-SEC-0001-COURSE_ID
     if (preg_match('/^CERT-SEC-(\d+)-(.+)$/', $cert_code, $matches)) {
         $u_id = intval($matches[1]);
         $c_id = $matches[2];
@@ -132,9 +108,6 @@ if ($pathInfo === '/verify-certificate' && $method === 'POST') {
     jsonResponse(["valid" => false, "message" => "Mã chứng chỉ không tồn tại hoặc học viên chưa hoàn thành khóa học!"], 404);
 }
 
-// ==============================================
-// 2. KIỂM TRA ĐĂNG NHẬP CHO CÁC API TRONG TRANG HỌC
-// ==============================================
 $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 if (!$authHeader && function_exists('apache_request_headers')) {
     $authHeader = apache_request_headers()['Authorization'] ?? '';
@@ -147,7 +120,6 @@ if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
 }
 
 if (empty($token)) {
-    if (preg_match('#^/certificate/#', $pathInfo)) die("Vui lòng đăng nhập!");
     jsonResponse(["message" => "Vui lòng đăng nhập!"], 401);
 }
 
@@ -159,15 +131,10 @@ try {
     $user_id = $decoded->user_id;
     $user_fullname = $decoded->fullname ?? "Học viên";
 } catch (Exception $e) {
-    if (preg_match('#^/certificate/#', $pathInfo)) die("Token không hợp lệ hoặc đã hết hạn!");
     jsonResponse(["message" => "Token không hợp lệ hoặc đã hết hạn!"], 401);
 }
 
-// ==============================================
-// 3. CÁC TÍNH NĂNG TƯƠNG TÁC
-// ==============================================
 if ($pathInfo === '/courses' && $method === 'GET') {
-    // [FIX] Tối ưu hóa N+1 Query và đảm bảo tương thích PHP cũ
     $courses_res = $conn->query("SELECT id, title, original_price, price, badge, color, icon FROM courses");
     if (!$courses_res) jsonResponse(["message" => "Lỗi CSDL (courses)"], 500);
     $courses = [];
@@ -192,7 +159,6 @@ if ($pathInfo === '/courses' && $method === 'GET') {
     $placeholders = implode(',', array_fill(0, count($course_ids), '?'));
     $weeks_stmt = $conn->prepare("SELECT id, course_id, week_number, title FROM course_weeks WHERE course_id IN ($placeholders) ORDER BY week_number");
     
-    // Tương thích PHP cũ cho bind_param
     $types = str_repeat('s', count($course_ids));
     $params = array_merge([$types], $course_ids);
     $refs = [];
@@ -212,7 +178,6 @@ if ($pathInfo === '/courses' && $method === 'GET') {
         $placeholders_lessons = implode(',', array_fill(0, count($week_ids), '?'));
         $lessons_stmt = $conn->prepare("SELECT id, week_id, type, title, duration, video_url as videoSrc, description, quiz_question, quiz_option_a, quiz_option_b, quiz_correct_answer FROM lessons WHERE week_id IN ($placeholders_lessons) ORDER BY id");
         
-        // Tương thích PHP cũ cho bind_param
         $types_lessons = str_repeat('i', count($week_ids));
         $params_lessons = array_merge([$types_lessons], $week_ids);
         $refs_lessons = [];
@@ -290,7 +255,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     $stmt->bind_param("s", $code);
     $stmt->execute();
     $discount_row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
 
     if (!$discount_row) jsonResponse(["message" => "Mã giảm giá không hợp lệ hoặc đã bị khóa!"], 400);
 
@@ -411,7 +375,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     $stmt->execute();
     $course = $stmt->get_result()->fetch_assoc();
     if (!$course) {
-        if (ob_get_level()) ob_clean();
         http_response_code(404);
         die("Khóa học không tồn tại!");
     }
@@ -422,7 +385,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     $name = htmlspecialchars($user_fullname);
     
     header('Content-Type: text/html; charset=utf-8');
-    if (ob_get_level()) ob_clean();
     echo <<<HTML
     <!DOCTYPE html>
     <html>
@@ -518,10 +480,8 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     $command = trim($input['command'] ?? '');
     if (empty($command)) jsonResponse(["output" => ""]);
     
-    // RẤT QUAN TRỌNG: Bọc lệnh lại để tránh hacker tiêm mã độc ra máy chủ gốc
     $safe_command = escapeshellarg($command);
     
-    // Khắc phục lỗi Windows/XAMPP không nhận diện được lệnh docker
     $docker_path = "docker";
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
         if (file_exists("C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe")) {
@@ -529,8 +489,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
         }
     }
 
-    // Gọi Docker chạy lệnh trong container có tên là 'coursera_kali'
-    // Lệnh 2>&1 giúp lấy cả thông báo lỗi (nếu gõ sai lệnh) và kết quả
     $output = shell_exec($docker_path . " exec coursera_kali bash -c " . $safe_command . " 2>&1");
     
     if ($output === null) {
@@ -550,7 +508,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     $total_price = 0;
     $order_ids = [];
     
-    // Sử dụng prepared statement với IN clause
     $placeholders = implode(',', array_fill(0, count($course_ids), '?'));
     $types = str_repeat('s', count($course_ids));
     $stmt = $conn->prepare("SELECT id, title, price FROM courses WHERE id IN ($placeholders)");
@@ -627,7 +584,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
         jsonResponse(["reply" => "Tôi có thể giúp gì cho bạn hôm nay?"]);
     }
 
-    // DÁN MÃ API KEY CỦA GOOGLE GEMINI VÀO ĐÂY
     $api_key = $_ENV['GEMINI_API_KEY'] ?? '';
     if (empty($api_key) || strpos($api_key, 'YOUR_') !== false) {
         jsonResponse(["reply" => "Lỗi hệ thống: CyberAI chưa được cấu hình. Vui lòng liên hệ quản trị viên."]);
@@ -636,8 +592,7 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     
     $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . trim($api_key);
     
-    // Cấu hình tính cách cho AI (Prompt Engineering)
-    $system_prompt = "Bạn là CyberAI, một trợ lý học thuật chuyên gia về An toàn thông tin của nền tảng Coursera Advanced. Hãy trả lời câu hỏi sau một cách ngắn gọn, thân thiện, dễ hiểu và bằng tiếng Việt. QUAN TRỌNG: KHÔNG sử dụng ký tự Markdown (như *, #, **), chỉ sử dụng dấu xuống dòng để tách đoạn.\n\nCâu hỏi của học viên: " . $message;
+    $system_prompt = "Bạn là CyberAI, một trợ lý AI chuyên về An toàn thông tin. Hãy trả lời câu hỏi của học viên một cách ngắn gọn, thân thiện, và bằng tiếng Việt. Đừng dùng Markdown (như *, #, **), chỉ dùng dấu xuống dòng để tách đoạn.\n\nCâu hỏi: " . $message;
     
     $data = [
         "contents" => [ ["parts" => [ ["text" => $system_prompt] ] ] ],
@@ -649,7 +604,7 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Bỏ qua lỗi SSL trên môi trường XAMPP cục bộ
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); 
     
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -662,7 +617,6 @@ if ($pathInfo === '/checkout' && $method === 'POST') {
         }
     }
     
-    // Nếu có lỗi, trích xuất lỗi chi tiết từ Google để hiển thị
     $error_msg = "Mã lỗi: $http_code";
     if ($response) {
         $res_json = json_decode($response, true);

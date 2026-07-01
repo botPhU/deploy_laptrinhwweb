@@ -20,7 +20,6 @@ use Firebase\JWT\JWT;
 header('Content-Type: application/json; charset=utf-8');
 
 function jsonResponse($data, $status = 200) {
-    if (ob_get_level()) ob_clean();
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit();
@@ -50,7 +49,6 @@ if (isset($data->google_token)) {
     $response = @file_get_contents("https://oauth2.googleapis.com/tokeninfo?id_token=" . $google_token, false, $context);
     
     if (!$response) {
-        if (ob_get_level()) ob_clean();
         http_response_code(400);
         echo json_encode(["message" => "Xác thực Google thất bại!"]);
         exit();
@@ -58,7 +56,6 @@ if (isset($data->google_token)) {
     
     $g_data = json_decode($response);
     if (!isset($g_data->email)) {
-        if (ob_get_level()) ob_clean();
         http_response_code(400);
         echo json_encode(["message" => "Không thể lấy thông tin email từ Google!"]);
         exit();
@@ -76,8 +73,7 @@ if (isset($data->google_token)) {
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
         
-        if (array_key_exists('is_blocked', $user) && $user['is_blocked'] == 1) {
-            if (ob_get_level()) ob_clean();
+        if (isset($user['is_blocked']) && $user['is_blocked'] == 1) {
             http_response_code(403);
             echo json_encode(["message" => "Tài khoản của bạn đã bị khóa do vi phạm chính sách! Vui lòng liên hệ Admin."]);
             exit();
@@ -110,7 +106,6 @@ if (isset($data->google_token)) {
     ];
 
     $jwt = JWT::encode($payload, $secret_key, 'HS256');
-    if (ob_get_level()) ob_clean();
     http_response_code(200);
     echo json_encode([
         "message" => "Đăng nhập Google thành công!",
@@ -177,7 +172,6 @@ if ($result->num_rows > 0) {
         ];
 
         $jwt = JWT::encode($payload, $secret_key, 'HS256');
-        if (ob_get_level()) ob_clean();
         http_response_code(200);
         echo json_encode([
             "message" => "Đăng nhập thành công!",
@@ -189,24 +183,19 @@ if ($result->num_rows > 0) {
             ]
         ]);
     } else {
-        // Xử lý khi nhập sai mật khẩu
         $attempts = (isset($user['failed_attempts']) ? $user['failed_attempts'] : 0) + 1;
         if ($attempts >= 5) {
-            // Khóa tài khoản 15 phút
             $conn->query("UPDATE users SET failed_attempts = $attempts, locked_until = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id = " . $user['id']);
-            if (ob_get_level()) ob_clean();
             http_response_code(403);
             echo json_encode(["message" => "Bạn đã nhập sai mật khẩu 5 lần. Tài khoản bị khóa tạm thời trong 15 phút."]);
         } else {
             $conn->query("UPDATE users SET failed_attempts = $attempts WHERE id = " . $user['id']);
             $remain = 5 - $attempts;
-            if (ob_get_level()) ob_clean();
             http_response_code(401);
             echo json_encode(["message" => "Mật khẩu không đúng! Bạn còn $remain lần thử trước khi bị khóa."]);
         }
     }
 } else {
-    if (ob_get_level()) ob_clean();
     http_response_code(401);
     echo json_encode(["message" => "Email hoặc mật khẩu không đúng!"]);
 }

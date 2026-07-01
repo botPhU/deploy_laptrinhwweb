@@ -3,12 +3,10 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-// Xử lý yêu cầu pre-flight của trình duyệt
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Tự động tải file .env nếu có thư viện Dotenv
 $autoload_path = __DIR__ . '/vendor/autoload.php';
 if (file_exists($autoload_path)) {
     require_once $autoload_path;
@@ -18,7 +16,6 @@ if (file_exists($autoload_path)) {
     }
 }
 
-// [FALLBACK] Nếu thư viện Dotenv không tồn tại, tự đọc file .env
 if (empty($_ENV) && file_exists(__DIR__ . '/.env')) {
     $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -29,13 +26,12 @@ if (empty($_ENV) && file_exists(__DIR__ . '/.env')) {
         if (strpos($line, '=') !== false) {
             list($name, $value) = explode('=', $line, 2);
             $name = trim($name);
-            $value = trim(trim($value), '"'); // Trim whitespace then quotes
+            $value = trim(trim($value), '"');
             $_ENV[$name] = $value;
         }
     }
 }
 
-// [FIX] Bắt buộc kiểm tra cấu hình an ninh
 if (empty($_ENV['JWT_SECRET_KEY'])) {
     http_response_code(500);
     die(json_encode([

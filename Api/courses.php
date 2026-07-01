@@ -13,7 +13,6 @@ register_shutdown_function(function() {
     }
 });
 
-/** @var mysqli $conn */
 require_once dirname(__DIR__) . '/db_connect.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -37,7 +36,6 @@ try {
     $decoded = JWT::decode($jwt, new Key($secret_key, 'HS256'));
     $user_id = $decoded->user_id;
 
-    // 1. Lấy danh sách các bài học đã hoàn thành
     $completed_lessons = [];
     $prog_stmt = $conn->prepare("SELECT lesson_id FROM user_progress WHERE user_id = ?");
     if ($prog_stmt) {
@@ -49,7 +47,6 @@ try {
         $prog_stmt->close();
     }
 
-    // 2. Lấy danh sách khóa học đã mua (current_step = 3)
     $unlocked_courses = [];
     $order_stmt = $conn->prepare("SELECT course_name FROM orders WHERE user_id = ? AND current_step = 3");
     if ($order_stmt) {
@@ -61,7 +58,6 @@ try {
         $order_stmt->close();
     }
 
-    // 3. Lấy dữ liệu khóa học
     $courses_res = $conn->query("SELECT * FROM courses");
     if (!$courses_res) jsonResponse(["message" => "Lỗi CSDL (courses)"], 500);
     $courses = [];

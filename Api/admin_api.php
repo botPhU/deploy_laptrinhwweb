@@ -22,7 +22,6 @@ require_once dirname(__DIR__) . '/db_connect.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Cấp phép cho các request kiểm tra (Preflight) của JS đi qua
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -32,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// 1. KIỂM TRA QUYỀN TRUY CẬP (Bảo mật bằng JWT Token)
 $pathInfo = $_SERVER['PATH_INFO'] ?? '/';
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -44,7 +42,6 @@ if (!$authHeader) {
     }
 }
 
-// Bỏ qua check JWT qua Header cho API Invoice (vì dùng token qua query params)
 if (!(preg_match('#^/invoice/([^/]+)$#', $pathInfo) && $method === 'GET')) {
     if (empty($authHeader) || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
         if (ob_get_level()) ob_clean();
@@ -68,7 +65,6 @@ try {
     $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
     $user_id = $decoded->user_id;
 
-    // Kiểm tra quyền Admin/Teacher
     $stmt = $conn->prepare("SELECT role FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -95,8 +91,6 @@ try {
     die(json_encode(["message" => "Token không hợp lệ hoặc đã hết hạn."]));
 }
 
-// 2. BỘ ĐỊNH TUYẾN (ROUTER) XỬ LÝ YÊU CẦU TỪ JS
-// Lấy dữ liệu Body (nếu có)
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) $input = [];
 
@@ -116,7 +110,6 @@ if ($pathInfo === '/dashboard-summary' && $method === 'GET') {
     $summary = [];
     $thirty_days_ago = date('Y-m-d H:i:s', strtotime('-30 days'));
 
-    // 1. Stats
     $stmt_stats = $conn->prepare("SELECT SUM(price) as total_revenue, COUNT(id) as total_orders FROM orders WHERE current_step = 3 AND created_at >= ?");
     $stmt_stats->bind_param("s", $thirty_days_ago);
     $stmt_stats->execute();
@@ -132,7 +125,6 @@ if ($pathInfo === '/dashboard-summary' && $method === 'GET') {
     $summary['stats']['users'] = $user_stats['total_users'] ?? 0;
     $stmt_users->close();
 
-    // 2. Revenue Chart
     $revenue_chart = [];
     $res_chart = $conn->query("SELECT DATE(created_at) as date, SUM(price) as total_revenue FROM orders WHERE current_step = 3 AND created_at >= '{$thirty_days_ago}' GROUP BY DATE(created_at) ORDER BY date ASC");
     if ($res_chart) {
@@ -143,7 +135,6 @@ if ($pathInfo === '/dashboard-summary' && $method === 'GET') {
     }
     $summary['revenue_chart'] = $revenue_chart;
 
-    // 3. Recent Orders (Top 5)
     $recent_orders = [];
     $res_orders = $conn->query("SELECT o.id, o.course_name, o.price, o.current_step, u.fullname as user_fullname FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.id DESC LIMIT 5");
     if ($res_orders) {
@@ -153,7 +144,6 @@ if ($pathInfo === '/dashboard-summary' && $method === 'GET') {
     }
     $summary['recent_orders'] = $recent_orders;
 
-    // 4. New Users (Top 5)
     $new_users = [];
     $res_users = $conn->query("SELECT fullname, email, created_at FROM users WHERE role = 'student' ORDER BY id DESC LIMIT 5");
     if ($res_users) {
@@ -165,7 +155,6 @@ if ($pathInfo === '/dashboard-summary' && $method === 'GET') {
 
     jsonResponse($summary);
 }
-// 2.1 QUẢN LÝ ĐƠN HÀNG
 if ($pathInfo === '/orders' && $method === 'GET') {
     $orders = [];
     $res = $conn->query("SELECT o.id, o.course_name, o.price, o.current_step, o.created_at, u.fullname as user_fullname, u.email as user_email FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.id DESC");
@@ -184,7 +173,6 @@ if ($pathInfo === '/orders' && $method === 'GET') {
     $stmt->execute();
     $stmt->close();
 
-    // Gửi email và tạo thông báo cho học viên
     $stmt_info = $conn->prepare("SELECT o.user_id, u.email, u.fullname, c.title as course_title, o.course_name as course_id FROM orders o JOIN users u ON o.user_id = u.id JOIN courses c ON o.course_name COLLATE utf8mb4_unicode_ci = c.id WHERE o.id = ?");
     if (!$stmt_info) jsonResponse(["message" => "Lỗi Database (prepare stmt_info): " . $conn->error], 500);
     $stmt_info->bind_param("i", $order_id);
@@ -195,7 +183,6 @@ if ($pathInfo === '/orders' && $method === 'GET') {
         $course_title = $row['course_title'];
         $course_id_str = $row['course_id'];
 
-        // 1. Tạo thông báo trong DB
         $notif_title = "Đơn hàng được duyệt";
         $notif_message = "Lộ trình <span class=\"text-[#0056D2] dark:text-blue-400 font-bold\">{$course_title}</span> đã được duyệt. Vào học ngay!";
         $stmt_notif = $conn->prepare("INSERT INTO notifications (user_id, title, message, course_id) VALUES (?, ?, ?, ?)");
@@ -203,14 +190,12 @@ if ($pathInfo === '/orders' && $method === 'GET') {
         $stmt_notif->execute();
         $stmt_notif->close();
 
-        // 2. Gửi email (logic cũ)
         try {
             $smtp_user = $_ENV['SMTP_USER'] ?? null;
             $smtp_pass = $_ENV['SMTP_PASS'] ?? null;
 
             if (!$smtp_user || !$smtp_pass) {
                 error_log("Lỗi gửi email duyệt đơn hàng: Cấu hình SMTP chưa được thiết lập trong file .env");
-                // Bỏ qua việc gửi mail nếu không có cấu hình, không làm sập tiến trình
                 jsonResponse(["success" => true, "message" => "Đã duyệt thành công đơn hàng #$order_id (Cảnh báo: không thể gửi email do thiếu cấu hình SMTP)."]);
             }
 
@@ -320,7 +305,6 @@ if ($pathInfo === '/orders' && $method === 'GET') {
     $stmt->execute();
     jsonResponse(["message" => "Xóa người dùng thành công."]);
 
-// 2.3 DOANH THU THỐNG KÊ & HÓA ĐƠN
 } elseif ($pathInfo === '/revenue' && $method === 'GET') {
     $revenue = [];
     $thirty_days_ago = date('Y-m-d H:i:s', strtotime('-30 days'));
@@ -410,7 +394,6 @@ if ($pathInfo === '/orders' && $method === 'GET') {
 HTML;
     exit();
 
-// 2.4 QUẢN LÝ KHÓA HỌC
 } elseif ($pathInfo === '/courses' && $method === 'GET') {
     $courses = [];
     $course_map = [];
@@ -481,8 +464,6 @@ HTML;
     jsonResponse(["message" => "Cập nhật khóa học thành công."]);
 } elseif (preg_match('#^/courses/([^/]+)$#', $pathInfo, $matches) && $method === 'DELETE') {
     $c_id = $matches[1];
-    // Sử dụng ON DELETE CASCADE trong CSDL là cách tốt nhất.
-    // Mã này giả định rằng CSDL đã được thiết lập đúng cách.
     $stmt = $conn->prepare("DELETE FROM courses WHERE id = ?");
     $stmt->bind_param("s", $c_id);
     $stmt->execute();
@@ -548,7 +529,6 @@ HTML;
     $stmt->execute();
     jsonResponse(["message" => "Xóa bài học thành công."]);
 
-// 2.5 QUẢN LÝ MÃ GIẢM GIÁ
 } elseif ($pathInfo === '/discounts' && $method === 'GET') {
     $discounts = [];
     $res = $conn->query("SELECT * FROM discount_codes ORDER BY id DESC");
@@ -594,7 +574,6 @@ HTML;
     $stmt->execute();
     jsonResponse(["message" => "Cập nhật trạng thái thành công."]);
 
-// 2.6 UPLOAD ẢNH/FILE
 } elseif ($pathInfo === '/upload' && $method === 'POST') {
     if (!isset($_FILES['file'])) jsonResponse(['message' => 'Không tìm thấy file.'], 400);
     $file = $_FILES['file'];
